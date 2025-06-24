@@ -1,0 +1,474 @@
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+class RecipeFinderPage extends StatefulWidget {
+  @override
+  _RecipeFinderPageState createState() => _RecipeFinderPageState();
+}
+
+class _RecipeFinderPageState extends State<RecipeFinderPage> {
+  final TextEditingController _searchController = TextEditingController();
+  bool _isSearchingByIngredients = true;
+  List<Map<String, dynamic>> _searchResults = [];
+  bool _isLoading = false;
+  String _error = '';
+  Map<String, dynamic>? _selectedRecipe;
+
+  void _search() async {
+    setState(() {
+      _isLoading = true;
+      _error = '';
+      _searchResults = [];
+      _selectedRecipe = null;
+    });
+
+    // In a real app, this would call your API
+    try {
+      // Simulate API call
+      await Future.delayed(Duration(seconds: 1));
+
+      // This is mock data - in a real app you would connect to your backend
+      if (_isSearchingByIngredients) {
+        final ingredients = _searchController.text.toLowerCase();
+        // Mock results based on ingredients
+        _searchResults = _getMockIngredientResults(ingredients);
+      } else {
+        final dishName = _searchController.text.toLowerCase();
+        // Mock results based on dish name
+        _searchResults = _getMockDishResults(dishName);
+      }
+    } catch (e) {
+      setState(() {
+        _error = 'Error searching recipes: $e';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _getRecipeDetails(Map<String, dynamic> recipe) async {
+    setState(() {
+      _isLoading = true;
+      _selectedRecipe = null;
+    });
+
+    try {
+      // Simulate API call to get recipe details
+      await Future.delayed(Duration(seconds: 1));
+
+      // Add detailed instructions to the recipe
+      final detailedRecipe = Map<String, dynamic>.from(recipe);
+      detailedRecipe['instructions'] = _getMockInstructions(recipe['name']);
+
+      setState(() {
+        _selectedRecipe = detailedRecipe;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Error getting recipe details: $e';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  List<Map<String, dynamic>> _getMockIngredientResults(String ingredients) {
+    final List<Map<String, dynamic>> allRecipes = [
+      {
+        'name': 'Palak Paneer',
+        'ingredients': 'spinach, paneer, onions, tomatoes, garlic, ginger, spices'
+      },
+      {
+        'name': 'Butter Chicken',
+        'ingredients': 'chicken, butter, cream, tomatoes, onions, spices'
+      },
+      {
+        'name': 'Chana Masala',
+        'ingredients': 'chickpeas, tomatoes, onions, garlic, ginger, spices'
+      },
+      {
+        'name': 'Aloo Gobi',
+        'ingredients': 'potatoes, cauliflower, onions, tomatoes, spices'
+      },
+    ];
+
+    final List<String> searchIngredients = ingredients.split(',').map((i) => i.trim()).toList();
+
+    return allRecipes.where((recipe) {
+      final recipeIngredients = recipe['ingredients'].toLowerCase();
+      return searchIngredients.any((ingredient) => recipeIngredients.contains(ingredient));
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> _getMockDishResults(String dishName) {
+    final List<Map<String, dynamic>> allRecipes = [
+      {
+        'name': 'Palak Paneer',
+        'ingredients': 'spinach, paneer, onions, tomatoes, garlic, ginger, spices'
+      },
+      {
+        'name': 'Butter Chicken',
+        'ingredients': 'chicken, butter, cream, tomatoes, onions, spices'
+      },
+      {
+        'name': 'Chana Masala',
+        'ingredients': 'chickpeas, tomatoes, onions, garlic, ginger, spices'
+      },
+      {
+        'name': 'Aloo Gobi',
+        'ingredients': 'potatoes, cauliflower, onions, tomatoes, spices'
+      }
+    ];
+
+    return allRecipes.where((recipe) =>
+        recipe['name'].toLowerCase().contains(dishName)
+    ).toList();
+  }
+
+  String _getMockInstructions(String recipeName) {
+    // In a real app, this would be fetched from your Groq AI integration
+    switch(recipeName) {
+      case 'Palak Paneer':
+        return '''
+# Ingredients:
+- 500g spinach, washed and chopped
+- 250g paneer, cubed
+- 2 medium onions, finely chopped
+- 2 tomatoes, pureed
+- 4 cloves garlic, minced
+- 1 inch ginger, grated
+- 1 green chili, chopped
+- 1 tsp cumin seeds
+- 1 tsp garam masala
+- 1/2 tsp turmeric powder
+- 1 tsp coriander powder
+- Salt to taste
+- 2 tbsp cream
+- 2 tbsp oil or ghee
+
+# Instructions:
+1. Blanch spinach in hot water for 2-3 minutes, drain and blend into a smooth puree.
+2. Heat oil in a pan, add cumin seeds and let them splutter.
+3. Add onions and sauté until golden brown.
+4. Add garlic, ginger, and green chili, sauté for 1-2 minutes.
+5. Add tomato puree and cook until oil separates.
+6. Add turmeric, coriander powder, garam masala, and salt. Cook for 1 minute.
+7. Add spinach puree and cook for 3-4 minutes.
+8. Add paneer cubes and simmer for 5 minutes.
+9. Finish with cream and serve hot with roti or rice.
+''';
+      case 'Butter Chicken':
+        return '''
+# Ingredients:
+- 500g chicken, boneless
+- 3 tbsp butter
+- 1 cup cream
+- 2 medium onions, finely chopped
+- 3 tomatoes, pureed
+- 2 tbsp ginger-garlic paste
+- 1 tsp red chili powder
+- 1 tsp garam masala
+- 1 tsp kasuri methi (dried fenugreek leaves)
+- Salt to taste
+- Fresh coriander for garnish
+
+# Instructions:
+1. Marinate chicken with salt, red chili powder, and ginger-garlic paste for 30 minutes.
+2. In a pan, heat butter and sauté onions until golden brown.
+3. Add tomato puree and cook until oil separates.
+4. Add all spices and cook for 2-3 minutes.
+5. Add marinated chicken and cook until done.
+6. Add cream and simmer for 5-7 minutes.
+7. Garnish with fresh coriander and serve with naan or rice.
+''';
+      default:
+        return '''
+# Ingredients:
+- Detailed ingredients will be provided based on your Groq AI integration
+
+# Instructions:
+- Detailed cooking instructions will be provided once you integrate your AI model
+''';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        title: RichText(
+          text: TextSpan(
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            children: [
+              TextSpan(text: "Recipe"),
+              TextSpan(text: "io", style: TextStyle(color: Colors.orangeAccent)),
+            ],
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(height: 20),
+              // Search by toggle
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.grey[900],
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _isSearchingByIngredients = true;
+                          });
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: _isSearchingByIngredients ? Colors.orange : Colors.transparent,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Center(
+                            child: Text(
+                              "By Ingredients",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _isSearchingByIngredients = false;
+                          });
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: !_isSearchingByIngredients ? Colors.orange : Colors.transparent,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Center(
+                            child: Text(
+                              "By Dish Name",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 20),
+              // Search field
+              TextField(
+                controller: _searchController,
+                style: TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: _isSearchingByIngredients
+                      ? "Enter ingredients (e.g., spinach, paneer, garlic)"
+                      : "Enter dish name (e.g., Palak Paneer)",
+                  hintStyle: TextStyle(color: Colors.grey),
+                  filled: true,
+                  fillColor: Colors.grey[900],
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  suffixIcon: IconButton(
+                    icon: Icon(Icons.search, color: Colors.white),
+                    onPressed: _search,
+                  ),
+                ),
+                onSubmitted: (_) => _search(),
+              ),
+              SizedBox(height: 20),
+              // Results or Selected Recipe
+              if (_isLoading)
+                Center(child: CircularProgressIndicator(color: Colors.orange))
+              else if (_error.isNotEmpty)
+                Text(_error, style: TextStyle(color: Colors.red))
+              else if (_selectedRecipe != null)
+                  _buildRecipeDetails()
+                else
+                  _buildSearchResults(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchResults() {
+    if (_searchResults.isEmpty) {
+      return Expanded(
+        child: Center(
+          child: Text(
+            _searchController.text.isEmpty
+                ? "Search for recipes using the field above"
+                : "No recipes found. Try different search terms.",
+            style: TextStyle(color: Colors.white70),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Found ${_searchResults.length} recipes",
+            style: TextStyle(color: Colors.white, fontSize: 16),
+          ),
+          SizedBox(height: 10),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _searchResults.length,
+              itemBuilder: (context, index) {
+                final recipe = _searchResults[index];
+                return GestureDetector(
+                  onTap: () => _getRecipeDetails(recipe),
+                  child: Container(
+                    margin: EdgeInsets.only(bottom: 12),
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[900],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          recipe['name'],
+                          style: TextStyle(
+                            color: Colors.orange,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          "Ingredients: ${recipe['ingredients']}",
+                          style: TextStyle(color: Colors.white70),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecipeDetails() {
+    return Expanded(
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                IconButton(
+                  icon: Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () {
+                    setState(() {
+                      _selectedRecipe = null;
+                    });
+                  },
+                ),
+                Expanded(
+                  child: Text(
+                    _selectedRecipe!['name'],
+                    style: TextStyle(
+                      color: Colors.orange,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 20),
+            Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[900],
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Ingredients:",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    _selectedRecipe!['ingredients'],
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 16),
+            Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[900],
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Instructions:",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    _selectedRecipe!['instructions'],
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
